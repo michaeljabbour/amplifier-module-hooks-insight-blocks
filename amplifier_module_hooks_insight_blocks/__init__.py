@@ -5,14 +5,15 @@ Injects instructions at session start that encourage the AI to provide
 educational insights before and after writing code, formatted as:
 
 ```
-`★ Insight ─────────────────────────────────────`
+`★ Insight ─────────────────────────────────────────`
 [2-3 key educational points]
-`─────────────────────────────────────────────────`
+`─────────────────────────────────────────────────────`
 ```
 
 Configuration options:
     mode: str - "explanatory" (default), "learning", or "combined"
     enabled: bool - Enable/disable the hook (default: True)
+    sage_hints: bool - Include Sage tool hints if available (default: True)
 """
 
 # Amplifier module metadata
@@ -33,9 +34,9 @@ You should be clear and educational, providing helpful explanations while remain
 
 ## Insights
 In order to encourage learning, before and after writing code, always provide brief educational explanations about implementation choices using (with backticks):
-"`★ Insight ─────────────────────────────────────`
+"`★ Insight ─────────────────────────────────────────`
 [2-3 key educational points]
-`─────────────────────────────────────────────────`"
+`─────────────────────────────────────────────────────`"
 
 These insights should be included in the conversation, not in the codebase. You should generally focus on interesting insights that are specific to the codebase or the code you just wrote, rather than general programming concepts. Do not wait until the end to provide insights. Provide them as you write code."""
 
@@ -93,11 +94,25 @@ Additionally, provide educational insights about the codebase as you help with t
 ### Insights
 Before and after writing code, provide brief educational explanations about implementation choices using:
 
-"`★ Insight ─────────────────────────────────────`
+"`★ Insight ─────────────────────────────────────────`
 [2-3 key educational points]
-`─────────────────────────────────────────────────`"
+`─────────────────────────────────────────────────────`"
 
 These insights should be included in the conversation, not in the codebase. Focus on interesting insights specific to the codebase or the code you just wrote, rather than general programming concepts. Provide insights as you write code, not just at the end."""
+
+# Sage hint - only included when sage tool is available
+SAGE_HINT = """
+
+## Strategic Advice (Sage)
+
+When facing architecture, design, or product decisions that need deeper analysis:
+• Use the `sage` tool for outcome-focused strategic guidance
+• Sage provides clear recommendations with explicit tradeoffs (no wishy-washy "it depends")
+• Available formats: `text`, `markdown`, `bullets`, `mermaid` (diagrams), `tradeoff_matrix`
+
+Example: `sage(question="Should we use microservices or monolith?", domain="architecture", format="tradeoff_matrix")`
+
+Use Sage when you need a second opinion on significant decisions, not for routine implementation questions."""
 
 
 def get_instructions(mode: str) -> str:
@@ -108,6 +123,17 @@ def get_instructions(mode: str) -> str:
         "combined": COMBINED_INSTRUCTIONS,
     }
     return instructions_map.get(mode, EXPLANATORY_INSTRUCTIONS)
+
+
+def _is_sage_available(coordinator: ModuleCoordinator) -> bool:
+    """Check if the sage tool is mounted in the session."""
+    try:
+        tools = coordinator.get("tools")
+        if tools and "sage" in tools:
+            return True
+        return False
+    except Exception:
+        return False
 
 
 async def mount(coordinator: ModuleCoordinator, config: dict[str, Any] | None = None):
@@ -123,6 +149,7 @@ async def mount(coordinator: ModuleCoordinator, config: dict[str, Any] | None = 
             - mode: "explanatory" (default), "learning", or "combined"
             - enabled: True/False to enable/disable (default: True)
             - priority: Hook priority (default: 50)
+            - sage_hints: Include Sage hints if tool available (default: True)
     """
     config = config or {}
 
@@ -133,7 +160,7 @@ async def mount(coordinator: ModuleCoordinator, config: dict[str, Any] | None = 
 
     mode = config.get("mode", "explanatory")
     priority = int(config.get("priority", 50))
-    instructions = get_instructions(mode)
+    include_sage_hints = config.get("sage_hints", True)
 
     logger.info(f"hooks-insight-blocks mounted with mode='{mode}'")
 
@@ -144,7 +171,14 @@ async def mount(coordinator: ModuleCoordinator, config: dict[str, Any] | None = 
         This handler fires on session:start and injects system-level
         instructions telling the AI to use insight block formatting.
         """
-        logger.debug(f"Injecting insight block instructions (mode={mode})")
+        instructions = get_instructions(mode)
+
+        # Conditionally add Sage hints if sage tool is available
+        if include_sage_hints and _is_sage_available(coordinator):
+            instructions += SAGE_HINT
+            logger.debug(f"Injecting insight block instructions with Sage hints (mode={mode})")
+        else:
+            logger.debug(f"Injecting insight block instructions (mode={mode})")
 
         return HookResult(
             action="inject_context",
