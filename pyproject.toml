@@ -8,18 +8,14 @@ requires-python = ">=3.11"
 authors = [
     { name = "Michael Jabbour" },
 ]
-dependencies = [
-    "amplifier-core",
-]
+dependencies = []
 
 [dependency-groups]
 dev = [
+    "amplifier-core @ git+https://github.com/microsoft/amplifier-core@main",
     "pytest>=8.0.0",
     "pytest-asyncio>=0.24.0",
 ]
-
-[tool.uv.sources]
-amplifier-core = { git = "https://github.com/microsoft/amplifier-core", branch = "main" }
 
 [project.entry-points."amplifier.modules"]
 hooks-insight-blocks = "amplifier_module_hooks_insight_blocks:mount"
