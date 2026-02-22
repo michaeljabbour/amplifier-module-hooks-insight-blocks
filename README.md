@@ -12,6 +12,24 @@ This module uses the Amplifier hooks system to inject instructions at session st
 `─────────────────────────────────────────────────`
 ```
 
+## Integration with hooks-streaming-ui
+
+This module's functionality is also available as a built-in feature of
+[amplifier-module-hooks-streaming-ui](https://github.com/michaeljabbour/amplifier-module-hooks-streaming-ui)
+(on the `feature/session-indicator` branch). If you're already using the streaming UI module,
+you can enable insight blocks there instead of mounting this as a separate hook:
+
+```yaml
+hooks:
+  - module: hooks-streaming-ui
+    config:
+      ui:
+        insight_mode: explanatory  # or "learning" or "combined"
+```
+
+Use this standalone module when you want insight injection **without** the streaming UI,
+or when you need independent configuration (e.g., different priority).
+
 ## Installation
 
 Add to your bundle:
