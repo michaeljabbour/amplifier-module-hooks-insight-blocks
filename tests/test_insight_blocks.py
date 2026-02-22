@@ -133,3 +133,104 @@ def test_get_instructions_default():
 
     result = get_instructions("unknown_mode")
     assert "explanatory" in result.lower()
+
+
+# ---------------------------------------------------------------------------
+# Insight Block Extraction Tests
+# ---------------------------------------------------------------------------
+
+
+class TestInsightBlockExtraction:
+    """Test the formatting module's insight block extraction logic."""
+
+    def test_extract_single_block(self):
+        """Single insight block is extracted cleanly."""
+        from amplifier_module_hooks_insight_blocks.formatting import extract_insight_blocks
+
+        text = (
+            "`★ Insight ─────────────────────────────────`\n"
+            "Key point one\nKey point two\n"
+            "`─────────────────────────────────────────────`"
+        )
+        insights, remaining = extract_insight_blocks(text)
+        assert len(insights) == 1
+        assert "Key point one" in insights[0]
+        assert "Key point two" in insights[0]
+        assert remaining == ""
+
+    def test_extract_embedded_block(self):
+        """Insight block surrounded by regular text returns both parts."""
+        from amplifier_module_hooks_insight_blocks.formatting import extract_insight_blocks
+
+        text = (
+            "Some preamble text.\n\n"
+            "`★ Insight ─────────────────────────────────`\n"
+            "Educational content here\n"
+            "`─────────────────────────────────────────────`\n\n"
+            "Some trailing text."
+        )
+        insights, remaining = extract_insight_blocks(text)
+        assert len(insights) == 1
+        assert "Educational content" in insights[0]
+        assert "preamble" in remaining
+        assert "trailing" in remaining
+
+    def test_extract_no_blocks(self):
+        """Plain text with no insight delimiters passes through unchanged."""
+        from amplifier_module_hooks_insight_blocks.formatting import extract_insight_blocks
+
+        text = "Just regular output text with no special blocks."
+        insights, remaining = extract_insight_blocks(text)
+        assert insights == []
+        assert remaining == text
+
+    def test_extract_multiple_blocks(self):
+        """Two insight blocks in one text chunk are both extracted."""
+        from amplifier_module_hooks_insight_blocks.formatting import extract_insight_blocks
+
+        text = (
+            "`★ Insight ─────────────────────────────────`\n"
+            "First insight\n"
+            "`─────────────────────────────────────────────`\n"
+            "Middle text\n"
+            "`★ Insight ─────────────────────────────────`\n"
+            "Second insight\n"
+            "`─────────────────────────────────────────────`"
+        )
+        insights, remaining = extract_insight_blocks(text)
+        assert len(insights) == 2
+        assert "First insight" in insights[0]
+        assert "Second insight" in insights[1]
+        assert "Middle text" in remaining
+
+    def test_unclosed_block_passes_through(self):
+        """Opening delimiter without closing delimiter is not matched."""
+        from amplifier_module_hooks_insight_blocks.formatting import extract_insight_blocks
+
+        text = (
+            "`★ Insight ─────────────────────────────────`\n"
+            "Unclosed content here"
+        )
+        insights, remaining = extract_insight_blocks(text)
+        assert insights == []
+        assert remaining == text
+
+    def test_variable_length_dashes(self):
+        """Regex handles variable-length dash runs."""
+        from amplifier_module_hooks_insight_blocks.formatting import extract_insight_blocks
+
+        text = (
+            "`★ Insight ──────────────────────────────────────────`\n"
+            "Content with longer dashes\n"
+            "`──────────────────────────────────────────────────────`"
+        )
+        insights, remaining = extract_insight_blocks(text)
+        assert len(insights) == 1
+        assert "Content with longer dashes" in insights[0]
+
+    def test_quick_check_pattern(self):
+        """INSIGHT_OPEN_PATTERN provides efficient quick-check."""
+        from amplifier_module_hooks_insight_blocks.formatting import INSIGHT_OPEN_PATTERN
+
+        assert INSIGHT_OPEN_PATTERN.search("Contains ★ Insight marker")
+        assert not INSIGHT_OPEN_PATTERN.search("No special markers here")
