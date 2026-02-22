@@ -1,7 +1,7 @@
 [project]
 name = "amplifier-module-hooks-insight-blocks"
 version = "1.0.0"
-description = "Educational insight blocks hook - Injects instructions for Claude to provide learning insights before/after code"
+description = "Educational insight blocks hook - Injects instructions for Amplifier to provide learning insights before/after code"
 license = "MIT"
 readme = "README.md"
 requires-python = ">=3.11"
