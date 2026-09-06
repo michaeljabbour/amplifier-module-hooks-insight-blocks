@@ -1,8 +1,29 @@
 """Tests for the insight blocks hook module."""
 
+from pathlib import Path
+
 import pytest
+import yaml
 
 from amplifier_core import HookResult
+
+
+def test_bundle_declares_insight_blocks_git_source() -> None:
+    """The bundle locates its hook without relying on a preinstalled module."""
+    bundle_path = Path(__file__).resolve().parents[1] / "bundle.md"
+    text = bundle_path.read_text(encoding="utf-8")
+    assert text.startswith("---\n")
+    _, header, _ = text.split("---", 2)
+    manifest = yaml.safe_load(header)
+    hooks = [
+        hook for hook in manifest["hooks"] if hook["module"] == "hooks-insight-blocks"
+    ]
+
+    assert len(hooks) == 1
+    assert hooks[0].get("source") == (
+        "git+https://github.com/michaeljabbour/amplifier-module-hooks-insight-blocks@main"
+    )
+    assert hooks[0]["config"] == {"mode": "explanatory", "enabled": True}
 
 
 class MockHookRegistry:

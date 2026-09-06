@@ -6,6 +6,7 @@ bundle:
 
 hooks:
   - module: hooks-insight-blocks
+    source: git+https://github.com/michaeljabbour/amplifier-module-hooks-insight-blocks@main
     config:
       mode: explanatory
       enabled: true
