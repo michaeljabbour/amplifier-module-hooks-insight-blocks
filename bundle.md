@@ -11,7 +11,3 @@ hooks:
       mode: explanatory
       enabled: true
 ---
-
-# Insight Blocks
-
-Educational insight blocks hook that displays learning-focused insights before and after writing code.
